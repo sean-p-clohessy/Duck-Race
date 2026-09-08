@@ -1,0 +1,66 @@
+/* EduTools palette: navy #07152e / #0d2347, paper #f4f3ee, pink #ff3f9a. */
+:root {
+  color-scheme: light;
+  --bg: #f4f3ee;
+  --panel: #ffffff;
+  --panel-alt: #edeef4;
+  --text: #091a35;
+  --muted: #526079;
+  --border: #c6cbd4;
+  --accent: #b91460;
+  --accent-hover: #9e1051;
+  --accent-soft: #ff3f9a0e;
+  --accent-line: #d64a8c80;
+  --input: #ffffff;
+  --hover: #e2e5ee;
+  --button-text: #ffffff;
+  --success-bg: #e4f1e9;
+  --success-border: #82aa91;
+  --success-text: #25583a;
+  --warning-bg: #fff0df;
+  --warning-border: #bb8750;
+  --warning-text: #79420e;
+  --danger: #b32939;
+  --error-text: #ac2333;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #07152e;
+  --panel: #0d2347;
+  --panel-alt: #10294e;
+  --text: #f4f3ee;
+  --muted: #b0bfd6;
+  --border: #354867;
+  --accent: #ff3f9a;
+  --accent-hover: #ff70b4;
+  --accent-soft: #ff3f9a13;
+  --accent-line: #ff3f9a70;
+  --input: #091b38;
+  --hover: #20395b;
+  --button-text: #07152e;
+  --success-bg: #173c36;
+  --success-border: #4b8270;
+  --success-text: #b6e7ca;
+  --warning-bg: #423023;
+  --warning-border: #a77c51;
+  --warning-text: #f7d3aa;
+  --danger: #b32939;
+  --error-text: #ffb5be;
+}
+.topbar {gap: 22px; flex-wrap: wrap; background: #07152e; color: #f4f3ee; border-color: #354867;}
+.topbar .brand {margin-right: auto;}
+.topbar .brand small, .topbar nav {color: #b0bfd6;}
+.brand-mark {background: #ff3f9a; color: #07152e;}
+.topbar .staff-link {border-color: #526581;}
+.topbar nav a:hover {color: #ff70b4;}
+.theme-controls {display: flex; gap: 3px; padding: 3px; border: 1px solid #526581; border-radius: 7px;}
+.theme-controls button {border: 0; border-radius: 4px; background: transparent; color: #c4cee0; font: 500 12px var(--font); padding: 8px 10px; min-height: 34px;}
+.theme-controls button:hover {background: #20395b; color: white;}
+.theme-controls button[aria-pressed="true"] {background: #ff3f9a; color: #07152e; font-weight: 700;}
+.topbar :focus-visible {outline-color: #ff70b4;}
+.skip:focus {color: var(--button-text);}
+@media(max-width:600px) {
+  .topbar {gap: 12px;}
+  .theme-controls {margin-left: auto;}
+  .theme-controls button {min-height: 38px; padding: 8px 12px;}
+}
