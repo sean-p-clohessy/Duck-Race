@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {snapshot,ranked,racePosition,dateKey,escapeHtml} from '../js/domain.js';
+import {createDemo} from '../js/demo.js';
+const now=new Date('2026-09-07T12:00:00Z');
+test('demo contains realistic annual and monthly scores',()=>{const d=createDemo(now),s=snapshot(d,now);assert.equal(d.learners.length,18);assert.equal(s.overall[0].total,14);assert.equal(s.monthly[0].total,5);assert.equal(s.total,d.awards.length);});
+test('deletion recalculates totals and monthly rankings',()=>{const d=createDemo(now),before=snapshot(d,now),a=d.awards.find(a=>a.learner_id==='demo-0');d.awards=d.awards.filter(x=>x.id!==a.id);const after=snapshot(d,now);assert.equal(after.total,before.total-1);assert.equal(after.overall[0].total,13);assert.equal(after.monthly.find(r=>r.id==='demo-0').total,2);});
+test('inactive learners, future awards and out-of-season awards stay private',()=>{const d=createDemo(now);d.learners[0].active=false;d.awards.push({...d.awards[0],id:'future',learner_id:'demo-1',awarded_at:'2028-01-01T00:00:00Z'});const s=snapshot(d,now);assert(!s.overall.some(r=>r.id==='demo-0'));assert(!s.feed.some(r=>r.name==='Alex R.'));assert.equal(s.overall[0].total,12);});
+test('London month boundary uses local time, including British Summer Time',()=>{assert.equal(dateKey('2026-08-31T23:30:00Z'),'2026-09-01');const d={learners:[{id:'a',first_name:'Test',surname_initial:'T',active:true}],awards:[{id:'1',learner_id:'a',awarded_at:'2026-08-31T23:30:00Z'}]};assert.equal(snapshot(d,now).monthly[0].total,1);assert.equal(snapshot(d,new Date('2026-10-01T12:00:00Z')).monthly.length,0);assert.equal(snapshot(d,new Date('2026-10-01T12:00:00Z')).overall[0].total,1);});
+test('ties share a competition rank and leave the next rank open',()=>{assert.deepEqual(ranked([{id:'b',name:'B',total:4},{id:'a',name:'A',total:4},{id:'c',name:'C',total:2}]).map(x=>[x.name,x.rank]),[['A',1],['B',1],['C',3]]);});
+test('race has a buffer and positions increase with awards',()=>{assert(racePosition(14,14)<90);assert(racePosition(8,14)<racePosition(12,14));assert.equal(racePosition(0,0),0);});
+test('public payload excludes staff and course information',()=>{const s=snapshot(createDemo(now),now);for(const item of [...s.overall,...s.monthly,...s.feed]){assert(!('staff_id'in item));assert(!('course_or_group'in item));assert(!('email'in item));}});
+test('user-authored content is escaped before rendering',()=>assert.equal(escapeHtml('<img onerror="x">'), '&lt;img onerror=&quot;x&quot;&gt;'));
