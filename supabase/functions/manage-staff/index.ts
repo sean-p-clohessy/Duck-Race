@@ -23,7 +23,10 @@ Deno.serve(async req=>{
     if(action==='list'){
       const {data,error}=await admin.from('staff').select('id,name,email,role,active').order('name');
       if(error)throw error;
-      return json({staff:data},200,origin);
+      const {data:users,error:usersError}=await admin.auth.admin.listUsers({page:1,perPage:1000});
+      if(usersError)throw usersError;
+      const authById=new Map(users.users.map(item=>[item.id,item]));
+      return json({staff:(data||[]).map(item=>{const auth=authById.get(item.id);const complete=auth?.user_metadata?.duck_setup_complete===true;const pending=Boolean(auth?.invited_at&&!auth?.last_sign_in_at);return {...item,setup_status:complete?'Ready':pending?'Invite sent':auth?.invited_at?'Invite opened':'Active',can_remove_pending:item.role==='staff'&&pending};})},200,origin);
     }
     if(action==='invite'){
       const name=String(body.name||'').trim(),email=String(body.email||'').trim().toLowerCase();
@@ -50,6 +53,23 @@ Deno.serve(async req=>{
       if(error)throw error;
       if(!data)return json({message:'Only staff access can be changed here. Manage administrators in Supabase.'},400,origin);
       return json({staff:data},200,origin);
+    }
+    if(action==='remove-pending'){
+      const staffId=String(body.staffId||'');
+      if(staffId===user.id||!/^[0-9a-f-]{36}$/i.test(staffId))return json({message:'Invalid pending invitation.'},400,origin);
+      const {data:target,error:targetError}=await admin.from('staff').select('id,name,email,role,active').eq('id',staffId).eq('role','staff').maybeSingle();
+      if(targetError)throw targetError;
+      if(!target)return json({message:'That pending invitation no longer exists.'},404,origin);
+      const {data:authUser,error:authError}=await admin.auth.admin.getUserById(staffId);
+      if(authError||!authUser.user?.invited_at||authUser.user.last_sign_in_at)return json({message:'This account has already been opened. Pause access instead.'},400,origin);
+      const {count,error:awardError}=await admin.from('duck_awards').select('id',{count:'exact',head:true}).eq('staff_id',staffId);
+      if(awardError)throw awardError;
+      if(count)return json({message:'This staff member has award history. Pause access instead.'},400,origin);
+      const {error:deleteStaffError}=await admin.from('staff').delete().eq('id',staffId);
+      if(deleteStaffError)throw deleteStaffError;
+      const {error:deleteUserError}=await admin.auth.admin.deleteUser(staffId);
+      if(deleteUserError){await admin.from('staff').insert(target);throw deleteUserError;}
+      return json({removed:true},200,origin);
     }
     return json({message:'Unknown staff action.'},400,origin);
   }catch(error){return json({message:error instanceof Error?error.message:'Staff management failed.'},500,origin);}
