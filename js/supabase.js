@@ -29,7 +29,9 @@ export function createClient(url,key){
     return refreshing;
   }
   const auth={
+    acceptInviteFromUrl(){const hash=new URLSearchParams(location.hash.slice(1)),access_token=hash.get('access_token'),refresh_token=hash.get('refresh_token');if(!access_token||!refresh_token)return false;store({access_token,refresh_token,expires_in:Number(hash.get('expires_in')||3600),expires_at:Math.floor(Date.now()/1000)+Number(hash.get('expires_in')||3600),token_type:'bearer'});history.replaceState(null,'',location.pathname+location.search);emit('SIGNED_IN');return hash.get('type')==='invite'||new URLSearchParams(location.search).get('invite')==='1';},
     async signInWithPassword(credentials){const result=await request('/auth/v1/token?grant_type=password',{method:'POST',body:credentials});if(!result.error){store({...result.data,expires_at:result.data.expires_at||Math.floor(Date.now()/1000)+result.data.expires_in});emit('SIGNED_IN');}return result;},
+    async updateUser(attributes){try{const result=await request('/auth/v1/user',{method:'PUT',body:attributes,token:await accessToken()});return {data:{user:result.data},error:result.error};}catch(error){return {data:{user:null},error};}},
     async getUser(){try{if(!session)return {data:{user:null},error:null};const result=await request('/auth/v1/user',{token:await accessToken()});if(result.error?.status===401){store(null);emit('SIGNED_OUT');}return {data:{user:result.data},error:result.error};}catch(error){return {data:{user:null},error};}},
     async signOut(){try{const token=await accessToken();if(session){const result=await request('/auth/v1/logout?scope=local',{method:'POST',token});if(result.error&&result.error.status!==401)return result;}return {error:null};}finally{store(null);emit('SIGNED_OUT');}},
     onAuthStateChange(callback){listeners.add(callback);return {data:{subscription:{unsubscribe:()=>listeners.delete(callback)}}};}
@@ -48,5 +50,5 @@ export function createClient(url,key){
       async then(resolve,reject){try{const result=await request(`/rest/v1/${encodeURIComponent(table)}?${params}`,{method,body,headers,token:await accessToken()});if(maybeSingle&&!result.error){if(result.data.length>1)result.error={message:'Multiple matching records.'};result.data=result.data[0]||null;}return resolve(result);}catch(error){return reject?reject(error):Promise.reject(error);}}
     };return query;
   }
-  return {auth,from,async rpc(name,args){return request(`/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',body:args});}};
+  return {auth,from,functions:{async invoke(name,{body}={}){try{return await request(`/functions/v1/${encodeURIComponent(name)}`,{method:'POST',body,token:await accessToken()});}catch(error){return {data:null,error};}}},async rpc(name,args){return request(`/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',body:args});}};
 }
