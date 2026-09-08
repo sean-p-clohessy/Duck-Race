@@ -22,8 +22,8 @@ Live mode is enabled only by supplying both Supabase values. A partial configura
 ## Connect Supabase
 
 1. Create a Supabase project. In its SQL editor run **supabase/schema.sql**, then **supabase/categories.sql**, then **supabase/policies.sql**, in that order. These are first-install scripts; schema/policies are not intended to be blindly rerun against an existing installation.
-2. Disable public signups and anonymous sign-ins in Supabase Auth. Create staff users through the Auth dashboard with email/password credentials. Learners do not get accounts.
-3. Authorise each staff user by adding a row through the SQL editor. Use their exact Auth user UUID:
+2. Disable public signups and anonymous sign-ins in Supabase Auth. Create the first administrator through the Auth dashboard and authorise that account with the SQL below. Learners do not get accounts.
+3. After the first administrator is authorised, deploy `supabase/functions/manage-staff/index.ts`. Administrators can then invite colleagues from **Staff** in the portal; invitees choose their own password from the secure email link. The service/secret key stays inside the Edge Function and is never shipped to the browser.
 
 ```sql
 insert into public.staff (id, name, email, role)
@@ -41,7 +41,7 @@ VITE_SUPABASE_ANON_KEY=YOUR-PUBLIC-KEY
 
 The `VITE_` names are retained as public build variables; the app does not require Vite. Never use a service-role key or a secret key. The build rejects recognisable private keys. These public values are deliberately included in the generated JavaScript; RLS and grants provide security.
 
-5. Run `node scripts/build.js` and restart/open the preview. Log in at `/admin/` with the staff account. The demo button disappears in connected mode. Staff passwords are managed in Supabase Auth; use the dashboard’s recovery/password tools if needed.
+5. Run `node scripts/build.js` and restart/open the preview. Log in at `/admin/` with the staff account. The demo button disappears in connected mode. Staff passwords are set from invitation links and can be recovered through Supabase Auth if needed.
 6. Add real learners under **Learners → Add learner** as an admin. Enter only first name, one surname initial and course/group. All live data starts empty. A disabled learner remains in staff history but disappears from the public race and feed. Deactivate staff through the trusted SQL editor with `update public.staff set active=false where id='UUID';`.
 
 ## Replace demo data with real learners
