@@ -54,6 +54,20 @@ Deno.serve(async req=>{
       if(!data)return json({message:'Only staff access can be changed here. Manage administrators in Supabase.'},400,origin);
       return json({staff:data},200,origin);
     }
+    if(action==='set-temporary-password'){
+      const staffId=String(body.staffId||''),password=String(body.password||'');
+      if(staffId===user.id||!/^[0-9a-f-]{36}$/i.test(staffId))return json({message:'Invalid staff account.'},400,origin);
+      if(password.length<8||password.length>128)return json({message:'Use a temporary password between 8 and 128 characters.'},400,origin);
+      const {data:target,error:targetError}=await admin.from('staff').select('id,name,email,role,active').eq('id',staffId).maybeSingle();
+      if(targetError)throw targetError;
+      if(!target)return json({message:'That staff account does not exist.'},404,origin);
+      const {data:authData,error:authError}=await admin.auth.admin.getUserById(staffId);
+      if(authError||!authData.user)return json({message:'The matching Supabase login does not exist.'},404,origin);
+      const metadata={...(authData.user.user_metadata||{}),display_name:target.name,full_name:target.name,duck_setup_complete:false};
+      const {error:updateError}=await admin.auth.admin.updateUserById(staffId,{password,user_metadata:metadata,email_confirm:true});
+      if(updateError)throw updateError;
+      return json({updated:true},200,origin);
+    }
     if(action==='remove-pending'){
       const staffId=String(body.staffId||'');
       if(staffId===user.id||!/^[0-9a-f-]{36}$/i.test(staffId))return json({message:'Invalid pending invitation.'},400,origin);
