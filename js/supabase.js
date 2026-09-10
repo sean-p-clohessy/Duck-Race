@@ -50,5 +50,5 @@ export function createClient(url,key){
       async then(resolve,reject){try{const result=await request(`/rest/v1/${encodeURIComponent(table)}?${params}`,{method,body,headers,token:await accessToken()});if(maybeSingle&&!result.error){if(result.data.length>1)result.error={message:'Multiple matching records.'};result.data=result.data[0]||null;}return resolve(result);}catch(error){return reject?reject(error):Promise.reject(error);}}
     };return query;
   }
-  return {auth,from,functions:{async invoke(name,{body}={}){try{return await request(`/functions/v1/${encodeURIComponent(name)}`,{method:'POST',body,token:await accessToken()});}catch(error){return {data:null,error};}}},async rpc(name,args){return request(`/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',body:args});}};
+  return {auth,from,functions:{async invoke(name,{body}={}){try{return await request(`/functions/v1/${encodeURIComponent(name)}`,{method:'POST',body,token:await accessToken()});}catch(error){return {data:null,error};}}},async rpc(name,args,{authenticated=false}={}){return request(`/rest/v1/rpc/${encodeURIComponent(name)}`,{method:'POST',body:args,token:authenticated?await accessToken():undefined});}};
 }

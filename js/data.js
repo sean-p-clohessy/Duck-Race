@@ -42,7 +42,7 @@ export async function saveLearner(learner){
 }
 export async function deleteLearner(id){
   if(isDemo){const d=demoData();d.awards=d.awards.filter(a=>a.learner_id!==id);d.learners=d.learners.filter(l=>l.id!==id);saveDemo(d);return;}
-  const removed=check(await (await db()).rpc('delete_learner',{target_id:id}));if(!removed)throw new Error('This learner is already removed, or you no longer have administrator access.');
+  const removed=check(await (await db()).rpc('delete_learner',{target_id:id},{authenticated:true}));if(!removed)throw new Error('This learner is already removed, or you no longer have administrator access.');
 }
 export async function manageStaff(action,payload={}){
   if(isDemo)throw new Error('Staff invitations are available on the live site.');
