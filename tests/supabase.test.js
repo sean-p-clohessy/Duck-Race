@@ -22,6 +22,7 @@ test('invalid refresh signs out and never submits a mutation',async()=>{
 test('public race uses only anonymous key even with a staff session',async()=>{
   const calls=setup([{body:session()},{body:{overall:[],monthly:[],feed:[],total:0}}]);const client=createClient('https://example.supabase.co','public-key');await client.auth.signInWithPassword({email:'e',password:'p'});await client.rpc('public_race',{season_start:'2026-08-01',season_end:'2027-08-01'});assert.equal(calls[1].options.headers.Authorization,'Bearer public-key');
 });
+test('admin RPCs use the signed-in staff session',async()=>{const calls=setup([{body:session()},{body:true}]);const client=createClient('https://example.supabase.co','public-key');await client.auth.signInWithPassword({email:'e',password:'p'});await client.rpc('delete_learner',{target_id:'learner-id'},{authenticated:true});assert.equal(calls[1].options.headers.Authorization,'Bearer test-access');assert.deepEqual(JSON.parse(calls[1].options.body),{target_id:'learner-id'});});
 test('REST filtering, pagination and writes preserve request data',async()=>{
   const calls=setup([{body:[]},{body:null},{status:409,body:{code:'23505',message:'duplicate'}}]);const client=createClient('https://example.supabase.co','public-key');
   await client.from('learners').select('*').order('first_name').order('id').range(500,999);const url=new URL(calls[0].url);assert.equal(url.searchParams.get('offset'),'500');assert.equal(url.searchParams.get('limit'),'500');assert.equal(url.searchParams.get('order'),'first_name.asc,id.asc');
