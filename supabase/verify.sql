@@ -54,12 +54,12 @@ end $$;
 select set_config('request.jwt.claim.sub','f1000000-0000-4000-8000-000000000002',true);
 do $$ declare payload jsonb;removed integer;begin
  payload:=public.public_race(current_date-30,current_date+1,50);
- if payload::text like '%PRIVATE GROUP%' or payload::text like '%duck-staff-check%' then raise exception 'FAIL: public projection leaks private fields';end if;
+ if payload::text not like '%PRIVATE GROUP%' or payload::text like '%duck-staff-check%' then raise exception 'FAIL: public projection course/staff fields incorrect';end if;
  update public.learners set active=false where id='f2000000-0000-4000-8000-000000000001';
  payload:=public.public_race(current_date-30,current_date+1,50);
  if payload::text like '%PolicyTest%' then raise exception 'FAIL: inactive learner still public';end if;
- delete from public.duck_awards where id='f3000000-0000-4000-8000-000000000001';get diagnostics removed=row_count;
- if removed<>1 then raise exception 'FAIL: admin cannot delete';end if;
+ if not public.delete_learner('f2000000-0000-4000-8000-000000000001') then raise exception 'FAIL: admin cannot delete learner';end if;
+ if exists(select 1 from public.learners where id='f2000000-0000-4000-8000-000000000001') or exists(select 1 from public.duck_awards where learner_id='f2000000-0000-4000-8000-000000000001') then raise exception 'FAIL: learner deletion was incomplete';end if;
 end $$;
 reset role;
 select 'PASS: anonymous isolation, staff authorisation, admin actions, timestamp integrity and public privacy' as result;

@@ -101,7 +101,22 @@ $$;
 revoke all on function private.stamp_award() from public, anon, authenticated;
 create trigger stamp_award before insert on public.duck_awards for each row execute function private.stamp_award();
 
--- The ONLY anonymous data endpoint. Never return course/group, staff identity,
+-- Admin-only atomic removal keeps the foreign-key restriction for every other caller.
+create or replace function public.delete_learner(target_id uuid)
+returns boolean language plpgsql security definer set search_path='' as $$
+declare removed uuid;
+begin
+ if not private.is_staff(true) then raise insufficient_privilege; end if;
+ delete from public.duck_awards where learner_id=target_id;
+ delete from public.learners where id=target_id returning id into removed;
+ return removed is not null;
+end;
+$$;
+revoke all on function public.delete_learner(uuid) from public, anon;
+grant execute on function public.delete_learner(uuid) to authenticated;
+
+-- The ONLY anonymous data endpoint. Returns course/group as the public lane tagline,
+-- but never staff identity,
 -- inactive learners or awards outside the requested season. Totals are aggregates.
 create or replace function public.public_race(season_start date, season_end date, feed_limit integer default 12)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
@@ -112,17 +127,18 @@ begin
  end if;
  with eligible as (
    select a.id,a.learner_id,a.category,a.public_message,a.awarded_at,
-          l.first_name || ' ' || l.surname_initial || '.' as name
+          l.first_name || ' ' || l.surname_initial || '.' as name,
+          l.course_or_group as course
    from public.duck_awards a join public.learners l on l.id=a.learner_id
    where l.active and a.awarded_at >= (season_start::timestamp at time zone 'Europe/London')
      and a.awarded_at < (season_end::timestamp at time zone 'Europe/London')
      and a.awarded_at<=now()
  ), overall as (
-   select learner_id as id,name,count(*)::integer as total from eligible group by learner_id,name
+   select learner_id as id,name,course,count(*)::integer as total from eligible group by learner_id,name,course
  ), monthly as (
-   select learner_id as id,name,count(*)::integer as total from eligible
+   select learner_id as id,name,course,count(*)::integer as total from eligible
    where date_trunc('month',awarded_at at time zone 'Europe/London')=date_trunc('month',now() at time zone 'Europe/London')
-   group by learner_id,name
+   group by learner_id,name,course
  ), feed as (
    select id,name,category,public_message,awarded_at from eligible
    order by awarded_at desc,id limit greatest(1,least(coalesce(feed_limit,12),50))
