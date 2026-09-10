@@ -59,7 +59,7 @@ Browser demo data never uploads to Supabase and is ignored when live mode is con
 | Active staff | Yes | Yes | Yes | No |
 | Active admin | Yes | Yes | Yes | Yes |
 
-Anonymous clients have no direct table access. `public_race` is a narrow read-only security-definer function with a fixed search path, a bounded feed and a maximum 370-day season. It projects only public display names, opaque identifiers, calculated scores, award categories, public messages and dates. Course/group and awarding staff never appear in that response. Active authorised staff can read staff-side data; only admins can manage learners or delete awards. Staff authorisation rows are managed exclusively through trusted database tooling, with no browser write grants.
+Anonymous clients have no direct table access. `public_race` is a narrow read-only security-definer function with a fixed search path, a bounded feed and a maximum 370-day season. It projects public display names, course/group taglines, opaque identifiers, calculated scores, award categories, public messages and dates. Awarding staff never appear in that response. Active authorised staff can read staff-side data; only admins can manage learners or delete awards. Staff authorisation rows are managed exclusively through trusted database tooling, with no browser write grants.
 
 Award timestamps and the awarding user are set by the database for browser requests. Category validity, active learner/staff membership, and the 100-character public-message limit are checked at the database boundary. There is no editable total, automatic repeat-behaviour limit, or learner account. Deleted awards reduce calculated totals; deactivation preserves records.
 
