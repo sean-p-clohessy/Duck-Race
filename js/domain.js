@@ -12,7 +12,7 @@ export function snapshot(data, now=new Date()) {
   const awards=data.awards.filter(a=>active.has(a.learner_id) && dateKey(a.awarded_at)>=config.seasonStart && dateKey(a.awarded_at)<config.seasonEnd && new Date(a.awarded_at)<=now);
   const totals=new Map(), monthly=new Map();
   for(const a of awards){totals.set(a.learner_id,(totals.get(a.learner_id)||0)+1);if(dateKey(a.awarded_at).slice(0,7)===month) monthly.set(a.learner_id,(monthly.get(a.learner_id)||0)+1);}
-  const rows=map=>ranked([...map].map(([id,total])=>({id,name:learnerName(active.get(id)),total})));
+  const rows=map=>ranked([...map].map(([id,total])=>({id,name:learnerName(active.get(id)),course:active.get(id).course_or_group,total})));
   return {overall:rows(totals),monthly:rows(monthly),total:awards.length,feed:[...awards].sort((a,b)=>new Date(b.awarded_at)-new Date(a.awarded_at)).slice(0,config.feedSize).map(a=>({id:a.id,name:learnerName(active.get(a.learner_id)),category:a.category,public_message:a.public_message,awarded_at:a.awarded_at}))};
 }
 export const racePosition=(total,leader)=>Math.max(0,Math.min(100,total/(Math.max(leader,1)+Math.max(3,Math.ceil(leader*.2)))*100));

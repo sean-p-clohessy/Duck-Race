@@ -40,6 +40,10 @@ export async function saveLearner(learner){
   if(isDemo){const d=demoData();const i=d.learners.findIndex(l=>l.id===learner.id);if(i<0)d.learners.push({...learner,id:crypto.randomUUID(),created_at:new Date().toISOString()});else d.learners[i]={...d.learners[i],...learner};saveDemo(d);return;}
   const s=await db();const rows=check(await (learner.id?s.from('learners').update(learner).eq('id',learner.id):s.from('learners').insert(learner)).select());if(!rows?.length)throw new Error('No learner was saved. Check your administrator access.');
 }
+export async function deleteLearner(id){
+  if(isDemo){const d=demoData();d.awards=d.awards.filter(a=>a.learner_id!==id);d.learners=d.learners.filter(l=>l.id!==id);saveDemo(d);return;}
+  const removed=check(await (await db()).rpc('delete_learner',{target_id:id}));if(!removed)throw new Error('This learner is already removed, or you no longer have administrator access.');
+}
 export async function manageStaff(action,payload={}){
   if(isDemo)throw new Error('Staff invitations are available on the live site.');
   return check(await (await db()).functions.invoke('manage-staff',{body:{action,...payload}}));
