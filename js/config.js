@@ -1,7 +1,7 @@
 export const config = {
   department:'Digital Technologies', college:'Boston College', academicYear:'2026/27',
   seasonStart:'2026-08-01', seasonEnd:'2027-08-01', timeZone:'Europe/London',
-  raceLanes:5, monthlySize:5, feedSize:12, refreshMs:20000, feedMs:9000,
+  raceLanes:10, monthlySize:5, feedSize:12, refreshMs:20000, feedMs:9000,
   features:{displayMode:true, earnSection:true},
   text:{title:'The Duck Race', principle:'Ducks recognise moments that stand out. As you develop, what counts as going above and beyond may develop with you too.'}
 };
